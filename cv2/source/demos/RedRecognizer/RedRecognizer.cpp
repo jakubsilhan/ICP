@@ -122,7 +122,7 @@ cv::Point2f RedRecognizer::find_red(cv::Mat& frame) {
     };
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << "Elapsed time: " << elapsed_seconds.count() << "sec" << std::endl;
+    std::cout << "Elapsed time: " << elapsed_seconds.count()*1000 << " millisec" << std::endl;
 
     return centroid_normalized;
 }
