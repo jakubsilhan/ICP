@@ -67,11 +67,49 @@ std::vector<uchar> App::lossy_bw_limit(cv::Mat& input_img, size_t size_limit)
     return bytes;
 }
 
+double psnr(const cv::Mat& original, const cv::Mat& decompressed) {
+    cv::Mat difference;
+    cv::absdiff(original, decompressed, difference);
+    difference.convertTo(difference, CV_32F);
+    difference = difference.mul(difference);
+
+    cv::Scalar channel_sums = cv::sum(difference);
+    double sum = channel_sums.val[0] + channel_sums.val[1] + channel_sums.val[2];
+
+    if (sum <= 1e-10) // very small difference
+        return 100;
+
+    double mse = sum / (double)(original.channels() * original.total());
+    double psnr = 10.0 * log10((255 * 255) / mse);
+    return psnr;
+}
+
 std::vector<uchar> App::lossy_quality_limit(const cv::Mat& frame, const float target_coefficient)
 {
-    // implement...
-    return {}; // placeholder: returns empty vector
+    std::string suff(".jpg");
+    if (!cv::haveImageWriter(suff))
+        throw std::runtime_error("Cannot compress to format: " + suff);
+
+    std::vector<uchar> bytes;
+    std::vector<int> compression_params = { cv::IMWRITE_JPEG_QUALITY, 100};
+
+    double target_psnr = target_coefficient * 50.0;
+    std::cout << "Target PSNR: " << target_psnr << " dB\n";
+
+    for (int q = 100; q >= 5; q -= 5) {
+        compression_params[1] = q;
+        cv::imencode(suff, frame, bytes, compression_params);
+        cv::Mat decoded = cv::imdecode(bytes, cv::IMREAD_COLOR);
+
+        double p = psnr(frame, decoded);
+        std::cout << "Quality=" << q << " - PSNR=" << p << " dB\b";
+
+        if (p <= target_psnr)
+            break;
+    }
+    return bytes;
 }
+
 int App::run(void)
 {
     cv::Mat frame;
@@ -92,22 +130,9 @@ int App::run(void)
             auto size_uncompressed = frame.elemSize() * frame.total();
             auto size_compressed_limit = size_uncompressed * target_coefficient;
 
-            //
             // Encode single image with limitation by bandwidth (encoded to original datasize ratio in 0.0 - 1.0)
-            //
-            bytes = lossy_bw_limit(frame, size_compressed_limit); // returns JPG compressed stream for single image
-
-
-            //
-            // TASK 1: Replace function lossy_bw_limit() - limitation by bandwith - with limitation by quality.
-            //         Implement the function:
-            // bytes = lossy_quality_limit(frame, target_coefficient);
-            // 
-            //         Use PSNR (Peak Signal to Noise Ratio)
-            //         or  SSIM (Structural Similarity) 
-            // (from https://docs.opencv.org/2.4/doc/tutorials/highgui/video-input-psnr-ssim/video-input-psnr-ssim.html#image-similarity-psnr-and-ssim ) 
-            //         to estimate quality of the compressed image.
-            //
+            //bytes = lossy_bw_limit(frame, size_compressed_limit); // returns JPG compressed stream for single image
+            bytes = lossy_quality_limit(frame, target_coefficient);
 
 
             // display compression ratio
