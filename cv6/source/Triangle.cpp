@@ -44,6 +44,9 @@ bool Triangle::init() {
         // open window (GL canvas) with no special properties
         // https://www.glfw.org/docs/latest/quick.html#quick_create_window
         // TODO: add error checking!
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         window = glfwCreateWindow(800, 600, "OpenGL context", NULL, NULL);
         glfwMakeContextCurrent(window);
 
