@@ -1,12 +1,18 @@
-#include "LibraryTests.h"
+//#include "LibraryTests.h"
+#include "Triangle.h"
 
 
 int main()
 {
-    LibraryTests app;
+    /*LibraryTests app;
 
     app.init();
 
+    app.run();*/
+
+    Triangle app;
+
+    app.init();
     app.run();
 
     return 0;
